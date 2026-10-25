@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "pi-claude-tui",
+      "name": "@dangnghia1997/pi-claude-tui",
       "dependencies": {
         "@shikijs/cli": "^4.0.2",
         "diff": "^9.0.0",

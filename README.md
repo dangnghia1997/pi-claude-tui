@@ -1,30 +1,30 @@
 <p align="center">
-  <img alt="pi-claude-tui" src="https://unpkg.com/pi-claude-tui/docs/logo.png" width="1100">
+  <img alt="pi-claude-tui" src="https://unpkg.com/@dangnghia1997/pi-claude-tui/docs/logo.png" width="1100">
 </p>
 
 # pi-claude-tui
 
 Claude Code's visual identity for [pi](https://pi.dev): two CC themes and CC-style chrome — welcome banner, status line, spinner, turn footer, thinking, prompt pointer, and tool rendering. Everything is drawn through pi's public extension API; no host files are modified.
 
-[![npm version](https://img.shields.io/npm/v/pi-claude-tui?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/pi-claude-tui)
+[![npm version](https://img.shields.io/npm/v/@dangnghia1997%2Fpi-claude-tui?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/@dangnghia1997/pi-claude-tui)
 [![ci](https://img.shields.io/github/actions/workflow/status/dangnghia1997/pi-claude-tui/ci.yml?branch=main&style=for-the-badge&logo=github&label=ci)](https://github.com/dangnghia1997/pi-claude-tui/actions/workflows/ci.yml)
-[![license](https://img.shields.io/npm/l/pi-claude-tui?style=for-the-badge)](LICENSE)
+[![license](https://img.shields.io/npm/l/@dangnghia1997%2Fpi-claude-tui?style=for-the-badge)](LICENSE)
 
 ## Install
 
 ```bash
-pi install npm:pi-claude-tui
+pi install npm:@dangnghia1997/pi-claude-tui
 ```
 
 Try it for a single run without changing your settings:
 
 ```bash
-pi -e npm:pi-claude-tui
+pi -e npm:@dangnghia1997/pi-claude-tui
 ```
 
-Pin this release with `@0.1.2`: `pi install npm:pi-claude-tui@0.1.2`.
+Pin this release with `@0.1.2`: `pi install npm:@dangnghia1997/pi-claude-tui@0.1.2`.
 
-Manage it with `pi list`, `pi update --extensions`, and `pi remove npm:pi-claude-tui`. All pi packages are listed in the [pi package gallery](https://pi.dev/packages).
+Manage it with `pi list`, `pi update --extensions`, and `pi remove npm:@dangnghia1997/pi-claude-tui`. All pi packages are listed in the [pi package gallery](https://pi.dev/packages).
 
 ### From a checkout
 
@@ -157,6 +157,22 @@ gh workflow run release.yml -f tag=v0.1.2
 ```
 
 Note: a package on the public npm registry never shows up in GitHub's repo sidebar "Packages" box — that box only lists GitHub Packages (`npm.pkg.github.com`, `ghcr.io`). The Releases section is the place to look.
+
+### Migrating from the unscoped name
+
+The package was first published unscoped. `pi-claude-tui` is deprecated in favour of `@dangnghia1997/pi-claude-tui`; existing `pi install npm:pi-claude-tui` entries keep resolving but are frozen at their pinned version. Switch with:
+
+```bash
+pi remove npm:pi-claude-tui
+pi install npm:@dangnghia1997/pi-claude-tui
+```
+
+Maintainer side, once per name:
+
+```bash
+npm publish                              # @dangnghia1997/pi-claude-tui, access public via publishConfig
+npm deprecate pi-claude-tui "renamed to @dangnghia1997/pi-claude-tui"
+```
 
 ## License
 
