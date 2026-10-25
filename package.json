@@ -20,6 +20,7 @@
 		"@earendil-works/pi-tui": "*"
 	},
 	"pi": {
+    "image": "https://raw.githubusercontent.com/dangnghia1997/pi-claude-tui/refs/heads/main/docs/logo.png",
 		"extensions": [
 			"./extensions/index.ts"
 		],
