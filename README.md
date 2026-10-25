@@ -3,6 +3,7 @@
 Claude Code's visual identity for [pi](https://pi.dev): two CC themes and CC-style chrome — welcome banner, status line, spinner, turn footer, thinking, prompt pointer, and tool rendering.
 
 [![npm](https://img.shields.io/npm/v/pi-claude-tui?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/pi-claude-tui)
+[![CI](https://img.shields.io/github/actions/workflow/status/dangnghia1997/pi-claude-tui/ci.yml?branch=main&style=flat-square&logo=github&label=ci)](https://github.com/dangnghia1997/pi-claude-tui/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/pi-claude-tui?style=flat-square&v=25102026)](LICENSE)
 
 <p align="center">
