@@ -1,89 +1,139 @@
 # pi-claude-tui
 
-Claude Code visual identity for [pi](https://pi.dev): themes, welcome banner, status line, spinner, turn footer, and CC-style tool rendering — faithfully aligned against the Claude Code source, line by line.
+Claude Code's visual identity for [pi](https://pi.dev): two CC themes and CC-style chrome — welcome banner, status line, spinner, turn footer, thinking, prompt pointer, and tool rendering.
+
+[![npm](https://img.shields.io/npm/v/pi-claude-tui?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/pi-claude-tui)
+[![license](https://img.shields.io/npm/l/pi-claude-tui?style=flat-square)](LICENSE)
 
 ## Install
-
-From this checkout (pi loads a local package in place, without copying it):
-
-```bash
-cd ~/pi-claude-tui && bun install   # local packages keep their own dependency tree
-pi install ~/pi-claude-tui
-```
-
-Once published:
 
 ```bash
 pi install npm:pi-claude-tui
 ```
 
-Try it without installing:
+Try it for a single run without changing your settings:
 
 ```bash
-pi -e ~/pi-claude-tui
+pi -e npm:pi-claude-tui
 ```
 
-### Recommended setting
+Append `@<version>` to pin a release: `pi install npm:pi-claude-tui@<version>`.
 
-This extension draws its own welcome banner, so pi's built-in startup header
-becomes redundant. Hide it in `~/.pi/agent/settings.json`:
+Manage it with `pi list`, `pi update --extensions`, and `pi remove npm:pi-claude-tui`.
+
+### From a checkout
+
+Local packages load in place and keep their own dependency tree:
+
+```bash
+cd ~/pi-claude-tui
+bun install
+pi install .
+```
+
+Run `bun install` again after pulling changes. More packages are listed in the [pi package gallery](https://pi.dev/packages).
+
+## Recommended settings
+
+This package draws its own welcome banner, so hide pi's built-in startup header. In `~/.pi/agent/settings.json`:
 
 ```json
 { "quietStartup": true }
 ```
 
-The banner is CC's bordered welcome box: the pi mark and session identity on
-the left, `Extensions` and `Skills` listed under their own titles on the right.
-On terminals narrower than ~76 columns it folds into a single box with the same
-groups underneath.
+Thinking is rendered through pi's expanded path. Leave `hideThinkingBlock` at its default (`false`); when it is `true`, pi renders its own label row and CC-style collapsed thinking leaves a blank line.
 
 ## What you get
 
-**2 themes** (`/themes` to switch, or use `/cc-theme` for the CC-only picker):
+### Themes
 
-- `claude-code-dark` — matched key-by-key to CC's dark palette
-- `claude-code-light` — matched key-by-key to CC's light palette
+- `claude-code-dark` — matched to CC's dark palette
+- `claude-code-light` — matched to CC's light palette
 
-Both ship as truecolor hex values; pi downconverts them to the 256-color cube on terminals that do not report truecolor support.
+Both ship as truecolor hex values; pi downconverts them on 256-color terminals. Switch with `/cc-theme`, or through `/settings`.
 
-**UI modules**:
+### UI
 
-- **Welcome banner** — CC's bordered box with the pi mark, model/cwd, and the loaded resources grouped under `Extensions` and `Skills` (both resolved for this session: extensions through pi's own package resolver, so disabled, missing, and untrusted-project entries stay out)
-- **Status line** — model with its current thinking level (`thinking off` / `thinking high`, reasoning models only), cwd (with `~` shortening), git branch, a context-window progress bar, session cost and totals, painted from a coral/teal palette instead of CC's all-dim bar: bold coral model, teal branch, blue cost, muted chrome, and a four-step context ladder — lime below 50%, amber from 50%, orange from 75%, pink from 90%. Hues are darkened automatically on light themes, and cwd then branch are dropped first when the terminal is too narrow so the meter stays visible. When pi cannot vouch for the estimate (right after compaction) it shows `ctx ?` instead of a stale percentage.
-- **Spinner** — CC's verb rotation with byline: elapsed time, token count, `esc to interrupt`
-- **Turn footer** — per-request cost/duration summary, matching CC v2.1.234 behavior
-- **Tool rendering** — CC-style tool rows (no background box), grouped consecutive calls with `⎿` continuation lines, CC-faithful diff rendering with syntax highlighting (shiki)
-- **Thinking** — collapsed by default with CC's label treatment; `alt+t` to expand
-- **Prompt editor** — CC's `❯` prompt pointer
+| Surface | Behavior |
+|---|---|
+| Welcome banner | CC's bordered box: pi mark, model, cwd, resumed session id/name when resuming, and the Extensions and Skills pi actually loaded (resolved through pi's package resolver). |
+| Status line | Model with thinking level (reasoning models), cwd, git branch, context meter, session cost and totals. Coral/teal palette; cwd, then branch, then the thinking badge are shed on narrow terminals so the meter survives; `ctx ?` after compaction when pi cannot vouch for the estimate. |
+| Spinner | CC verb rotation with glimmer, elapsed time, output tokens, and a live thinking byline. Rebuilt from the active theme each tick. |
+| Turn footer | `✻ Worked for 12s` once per request (sub-second requests are skipped), persisted across reload and resume. |
+| Thinking | Collapsed by default with no transcript row, like CC; `alt+t` expands. Its traces are the spinner byline and the collapsed tool-group summary. |
+| Prompt editor | CC's `❯` pointer in the editor gutter, recolored with bash mode. |
+| Tool rendering | CC-style call rows, grouped consecutive read-only calls with `⎿` continuations, `ctrl+o` previews, and syntax-highlighted diffs (shiki). |
 
-**Commands**:
+### Commands and shortcuts
 
-- `/cc-theme` — theme picker (CC themes only)
-- `/cc-tools` — toggle CC-style tool rendering options
-- `/cc-context` — context meter: `bar` (default) · `text` · `off`, and `width 4-40`; the choice persists
-- `/cc-spinner` — spinner options
+| Input | Description |
+|---|---|
+| `/cc-theme` | Pick one of the two CC themes; the choice persists across projects. |
+| `/cc-tools` | Show tool-rendering status. Subcommands: `group on\|off\|toggle`, `detail on\|off\|toggle`. |
+| `/cc-context` | Show the context meter. Subcommands: `bar\|text\|off\|toggle`, `width 4-40`. |
+| `/cc-spinner` | Print the spinner configuration. |
+| `alt+t` | Toggle CC-style thinking visibility. |
+
+`detail` is this package's equivalent of CC verbose: previews run to pi's full tool-output cap instead of a few rows, and the status line shows a `detail` segment. It has no keyboard shortcut, matching CC, so it cannot be toggled by accident.
+
+## Configuration
+
+The package persists its toggles in `~/.pi/settings.json`:
+
+| Key | Default | Description |
+|---|---|---|
+| `groupToolCalls` | `true` | Group consecutive read-only tool calls. |
+| `ccToolsExtraDetail` | `false` | Extra detail (CC verbose). |
+| `ccTheme` | — | Last `/cc-theme` pick, restored if pi falls back to a built-in theme at startup. |
+| `ccContextBar` | `"bar"` | Context meter mode: `bar`, `text`, `off`. |
+| `ccContextBarWidth` | `10` | Meter width in cells, `4`–`40`. |
+
+pi's own settings — `theme`, `quietStartup`, `hideThinkingBlock` — live in `~/.pi/agent/settings.json`. The `/cc-theme` picker writes both so the theme survives startup and the extension can restore it if package resolution runs late.
 
 ## Requirements
 
-Runs inside pi (`@earendil-works/pi-coding-agent`); pi core packages are peer dependencies provided by the host. Developed and tested against pi 1.4.x. Every surface uses pi's public extension API; the only host-class touch is two guarded, idempotent method wrappers (`AssistantMessageComponent.render`, `InteractiveMode.showStatus`) that no-op if a future pi changes those shapes.
+- pi 1.4.x or newer (`@earendil-works/pi-coding-agent`, `@earendil-works/pi-tui`)
+- Node.js 22.19+
+- A truecolor terminal is recommended; 256-color terminals are downconverted automatically.
+- The visual surfaces target pi's interactive TUI; print, JSON, and RPC modes have no banner, footer, or spinner.
 
-Runtime dependencies (`diff`, `@shikijs/cli`) live in the package's own `node_modules`. Pi does not install dependencies for a local package, so run `bun install` in this directory after checking out or updating it. This package is developed with bun (`bun.lock`; no npm lockfile is kept) — bun installs the pi host packages from `devDependencies` for typechecking and never ships them.
+Runtime dependencies (`diff`, `@shikijs/cli`) are installed by pi for npm packages. Local checkouts install them with `bun install`.
 
-For development, `bun run typecheck` checks the extension sources against the pi type definitions (TypeScript + `@types/node` are dev-only and never shipped).
+## How it integrates
+
+Everything is built on pi's public extension API. No host files are modified.
+
+`host-patches.ts` wraps two public pi exports at runtime — `AssistantMessageComponent.render` and `InteractiveMode.showStatus` — to remove stray blank rows and the `Tool output: expanded|collapsed` notice. The wrappers are Symbol-guarded, idempotent, and no-op if a future pi changes those method shapes.
+
+The package only renders UI: it reads local settings and session state and makes no network requests. Like any pi package, its extensions run with your permissions; review the source before installing packages from others.
 
 ## Development
 
 ```bash
-bun install          # runtime + dev dependencies (host packages come from devDependencies)
+bun install          # runtime + dev dependencies
 bun run typecheck    # tsc --noEmit, strict
-bun run lint         # Biome: lint + format + import order (read-only, CI-safe)
-bun run lint:fix     # same, applying Biome's safe fixes
+bun run lint         # Biome lint + format + import order (read-only)
+bun run lint:fix     # apply Biome's safe fixes
 bun run format       # formatting only
 ```
 
-The package follows pi's conventional layout — `extensions/` (TypeScript sources, entry `extensions/index.ts`) and `themes/` (six JSON themes) — and pins both explicitly in the `pi` manifest of `package.json`, so only `extensions/index.ts` loads (the helper modules beside it are imported, never discovered as extensions).
+Layout:
 
-Biome is the single tool for linting and formatting (`biome.json`); `bun run lint` is what CI and `prepublishOnly` run, so a publish never ships code that fails the typecheck or the linter. Intentional exceptions live in `biome.json`: ANSI escape regexes (`noControlCharactersInRegex`) and non-null assertions on array access (`noNonNullAssertion`) are off because this codebase matches terminal control sequences and indexes tuples under `strict` without `noUncheckedIndexedAccess`.
+| Path | Contents |
+|---|---|
+| `extensions/index.ts` | Entry point; imports the chrome and tool modules. |
+| `extensions/*.ts` | Banner, spinner, status line, turn footer, thinking, palette, prompt pointer. |
+| `extensions/tools/` | Tool renderers, grouping, collapse classification, diff renderer. |
+| `themes/*.json` | The two CC themes. |
+
+The `pi` manifest in `package.json` pins the entry (`extensions/index.ts`) and themes, so helper modules beside the entry are imported but never discovered as separate extensions.
+
+`npm publish` runs `prepublishOnly` (`bun run typecheck && bun run lint`), so a failing build cannot ship. Release with:
+
+```bash
+npm version patch
+npm publish
+```
 
 ## License
 
