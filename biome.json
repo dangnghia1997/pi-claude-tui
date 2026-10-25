@@ -1,0 +1,28 @@
+{
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"files": {
+		"includes": ["**", "!node_modules", "!themes", "!*.tgz", "!bun.lock"]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"lineWidth": 120
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"style": {
+				"noNonNullAssertion": "off"
+			},
+			"suspicious": {
+				"noControlCharactersInRegex": "off"
+			}
+		}
+	},
+	"assist": {
+		"actions": { "source": { "organizeImports": "on" } }
+	},
+	"javascript": {
+		"formatter": { "quoteStyle": "double" }
+	}
+}

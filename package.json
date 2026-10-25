@@ -1,0 +1,55 @@
+{
+	"name": "pi-claude-tui",
+	"version": "0.0.1",
+	"description": "Claude Code visual identity for pi: 2 Claude Code themes, welcome banner, status line with context meter, CC spinner, turn footer, and CC-style tool rendering",
+	"keywords": [
+		"pi-package",
+		"pi-extension",
+		"claude-code",
+		"theme",
+		"tui"
+	],
+	"license": "MIT",
+	"author": "Alex Dang",
+	"dependencies": {
+		"@shikijs/cli": "^4.0.2",
+		"diff": "^9.0.0"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*",
+		"@earendil-works/pi-tui": "*"
+	},
+	"pi": {
+		"extensions": [
+			"./extensions/index.ts"
+		],
+		"themes": [
+			"./themes"
+		]
+	},
+	"files": [
+		"extensions",
+		"themes",
+		"README.md",
+		"LICENSE"
+	],
+	"type": "module",
+	"devDependencies": {
+		"@biomejs/biome": "^2.6.3",
+		"@earendil-works/pi-coding-agent": "^1.4.0",
+		"@earendil-works/pi-tui": "^1.4.0",
+		"@types/node": "^24.19.2",
+		"typescript": "^7.0.2"
+	},
+	"engines": {
+		"node": ">=22.19.0"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"prepublishOnly": "bun run typecheck && bun run lint",
+		"lint": "biome check",
+		"lint:fix": "biome check --write",
+		"format": "biome format --write"
+	},
+	"packageManager": "bun@1.4.4"
+}
