@@ -132,12 +132,20 @@ Layout:
 
 The `pi` manifest in `package.json` pins the entry (`extensions/index.ts`) and themes, so helper modules beside the entry are imported but never discovered as separate extensions.
 
-`npm publish` runs `prepublishOnly` (`bun run typecheck && bun run lint`), so a failing build cannot ship. Release with:
+`npm publish` runs `prepublishOnly` (`bun run typecheck && bun run lint`), so a failing build cannot ship.
+
+## Releasing
+
+Publishing is tag-driven: `.github/workflows/release.yml` runs on every `v*` tag push, verifies the tag matches `package.json`, then publishes to npm and creates the GitHub Release. That keeps the npm version, the git tag, and the repo's Releases page in sync without any manual step.
 
 ```bash
-npm version patch
-npm publish
+npm version patch          # bumps package.json, commits, creates tag v0.1.1
+git push --follow-tags     # triggers the Release workflow
 ```
+
+Auth: the workflow prefers npm [trusted publishing](https://docs.npmjs.com/trusted-publishers) (OIDC, no secret — add `dangnghia1997/pi-claude-tui` + `release.yml` as a trusted publisher on npmjs.com). If you would rather use a token, add an npm automation token as the repository secret `NPM_TOKEN`.
+
+Note: a package on the public npm registry never shows up in GitHub's repo sidebar "Packages" box — that box only lists GitHub Packages (`npm.pkg.github.com`, `ghcr.io`). The Releases section is the place to look.
 
 ## License
 

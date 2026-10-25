@@ -1,0 +1,105 @@
+name: Release
+
+# Publishing is driven by tags so npm and GitHub can never disagree about what
+# is current: push a tag -> verify -> publish to npm -> create the GitHub Release.
+# Safe to re-run: if the version is already on npm the publish step is skipped,
+# which lets you backfill the GitHub Release for an older tag via workflow_dispatch.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to (re)publish, e.g. v0.1.0
+        required: true
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      # contents: write -> create the GitHub Release
+      # id-token: write -> npm provenance / OIDC trusted publishing
+      contents: write
+      id-token: write
+    steps:
+      - name: Resolve tag
+        id: ref
+        run: |
+          tag="${{ github.event.inputs.tag }}"
+          if [ -z "$tag" ]; then tag="${GITHUB_REF_NAME}"; fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      # npm >= 11.5 is required for OIDC trusted publishing.
+      - name: Use latest npm
+        run: npm install -g npm@latest
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Verify tag matches package.json version
+        env:
+          VERSION: ${{ steps.ref.outputs.version }}
+        run: |
+          version="$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")"
+          if [ "$version" != "$VERSION" ]; then
+            echo "::error::tag v$VERSION does not match package.json version $version"
+            exit 1
+          fi
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Publish to npm
+        env:
+          VERSION: ${{ steps.ref.outputs.version }}
+          # Preferred: configure a GitHub Actions trusted publisher for this
+          # workflow on npmjs.com and leave the NPM_TOKEN secret unset (OIDC).
+          # Fallback: an npm automation/granular token in the NPM_TOKEN secret.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          name="$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).name")"
+          if npm view "$name@$VERSION" version >/dev/null 2>&1; then
+            echo "::notice::$name@$VERSION is already on npm, skipping publish"
+            exit 0
+          fi
+          npm publish --access public --provenance
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.ref.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::notice::release $TAG already exists, skipping"
+            exit 0
+          fi
+          gh release create "$TAG" \
+            --verify-tag \
+            --generate-notes \
+            --title "$TAG"
