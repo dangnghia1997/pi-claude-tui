@@ -1,14 +1,14 @@
+<p align="center">
+  <img alt="pi-claude-tui" src="https://unpkg.com/pi-claude-tui/docs/logo.png" width="1100">
+</p>
+
 # pi-claude-tui
 
-Claude Code's visual identity for [pi](https://pi.dev): two CC themes and CC-style chrome — welcome banner, status line, spinner, turn footer, thinking, prompt pointer, and tool rendering.
+Claude Code's visual identity for [pi](https://pi.dev): two CC themes and CC-style chrome — welcome banner, status line, spinner, turn footer, thinking, prompt pointer, and tool rendering. Everything is drawn through pi's public extension API; no host files are modified.
 
-[![npm](https://img.shields.io/npm/v/pi-claude-tui?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/pi-claude-tui)
-[![CI](https://img.shields.io/github/actions/workflow/status/dangnghia1997/pi-claude-tui/ci.yml?branch=main&style=flat-square&logo=github&label=ci)](https://github.com/dangnghia1997/pi-claude-tui/actions/workflows/ci.yml)
-[![license](https://img.shields.io/npm/l/pi-claude-tui?style=flat-square&v=25102026)](LICENSE)
-
-<p align="center">
-  <img alt="pi-claude-tui" src="https://unpkg.com/pi-claude-tui/docs/logo.png" width="720">
-</p>
+[![npm version](https://img.shields.io/npm/v/pi-claude-tui?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/pi-claude-tui)
+[![ci](https://img.shields.io/github/actions/workflow/status/dangnghia1997/pi-claude-tui/ci.yml?branch=main&style=for-the-badge&logo=github&label=ci)](https://github.com/dangnghia1997/pi-claude-tui/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/pi-claude-tui?style=for-the-badge)](LICENSE)
 
 ## Install
 
@@ -22,9 +22,9 @@ Try it for a single run without changing your settings:
 pi -e npm:pi-claude-tui
 ```
 
-Pin this release with `@0.1.0`: `pi install npm:pi-claude-tui@0.1.0`.
+Pin this release with `@0.1.2`: `pi install npm:pi-claude-tui@0.1.2`.
 
-Manage it with `pi list`, `pi update --extensions`, and `pi remove npm:pi-claude-tui`.
+Manage it with `pi list`, `pi update --extensions`, and `pi remove npm:pi-claude-tui`. All pi packages are listed in the [pi package gallery](https://pi.dev/packages).
 
 ### From a checkout
 
@@ -36,7 +36,14 @@ bun install
 pi install .
 ```
 
-Run `bun install` again after pulling changes. More packages are listed in the [pi package gallery](https://pi.dev/packages).
+Run `bun install` again after pulling changes.
+
+## Quick start
+
+1. Start pi. The CC banner replaces pi's startup header, the status line gains a context meter, and replies end with `✻ Worked for 12s`.
+2. Hide pi's own startup header so the banner is not preceded by it — see [Recommended settings](#recommended-settings).
+3. Pick a theme with `/cc-theme`, or through `/settings`.
+4. Check what is on with `/cc-tools`, `/cc-context`, and `/cc-spinner`.
 
 ## Recommended settings
 
@@ -48,7 +55,7 @@ This package draws its own welcome banner, so hide pi's built-in startup header.
 
 Thinking is rendered through pi's expanded path. Leave `hideThinkingBlock` at its default (`false`); when it is `true`, pi renders its own label row and CC-style collapsed thinking leaves a blank line.
 
-## What you get
+## Features
 
 ### Themes
 
@@ -104,7 +111,7 @@ pi's own settings — `theme`, `quietStartup`, `hideThinkingBlock` — live in `
 
 Runtime dependencies (`diff`, `@shikijs/cli`) are installed by pi for npm packages. Local checkouts install them with `bun install`.
 
-## How it integrates
+## How it works
 
 Everything is built on pi's public extension API. No host files are modified.
 
@@ -132,8 +139,6 @@ Layout:
 | `themes/*.json`       | The two CC themes.                                                            |
 
 The `pi` manifest in `package.json` pins the entry (`extensions/index.ts`) and themes, so helper modules beside the entry are imported but never discovered as separate extensions.
-
-`npm publish` runs `prepublishOnly` (`bun run typecheck && bun run lint`), so a failing build cannot ship.
 
 ## Releasing
 
