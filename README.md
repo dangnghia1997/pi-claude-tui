@@ -17,7 +17,7 @@ Try it for a single run without changing your settings:
 pi -e npm:pi-claude-tui
 ```
 
-Append `@<version>` to pin a release: `pi install npm:pi-claude-tui@<version>`.
+Pin this release with `@0.1.0`: `pi install npm:pi-claude-tui@0.1.0`.
 
 Manage it with `pi list`, `pi update --extensions`, and `pi remove npm:pi-claude-tui`.
 
@@ -54,25 +54,25 @@ Both ship as truecolor hex values; pi downconverts them on 256-color terminals. 
 
 ### UI
 
-| Surface | Behavior |
-|---|---|
-| Welcome banner | CC's bordered box: pi mark, model, cwd, resumed session id/name when resuming, and the Extensions and Skills pi actually loaded (resolved through pi's package resolver). |
-| Status line | Model with thinking level (reasoning models), cwd, git branch, context meter, session cost and totals. Coral/teal palette; cwd, then branch, then the thinking badge are shed on narrow terminals so the meter survives; `ctx ?` after compaction when pi cannot vouch for the estimate. |
-| Spinner | CC verb rotation with glimmer, elapsed time, output tokens, and a live thinking byline. Rebuilt from the active theme each tick. |
-| Turn footer | `✻ Worked for 12s` once per request (sub-second requests are skipped), persisted across reload and resume. |
-| Thinking | Collapsed by default with no transcript row, like CC; `alt+t` expands. Its traces are the spinner byline and the collapsed tool-group summary. |
-| Prompt editor | CC's `❯` pointer in the editor gutter, recolored with bash mode. |
-| Tool rendering | CC-style call rows, grouped consecutive read-only calls with `⎿` continuations, `ctrl+o` previews, and syntax-highlighted diffs (shiki). |
+| Surface        | Behavior                                                                                                                                                                                                                                                                                 |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Welcome banner | CC's bordered box: pi mark, model, cwd, resumed session id/name when resuming, and the Extensions and Skills pi actually loaded (resolved through pi's package resolver).                                                                                                                |
+| Status line    | Model with thinking level (reasoning models), cwd, git branch, context meter, session cost and totals. Coral/teal palette; cwd, then branch, then the thinking badge are shed on narrow terminals so the meter survives; `ctx ?` after compaction when pi cannot vouch for the estimate. |
+| Spinner        | CC verb rotation with glimmer, elapsed time, output tokens, and a live thinking byline. Rebuilt from the active theme each tick.                                                                                                                                                         |
+| Turn footer    | `✻ Worked for 12s` once per request (sub-second requests are skipped), persisted across reload and resume.                                                                                                                                                                               |
+| Thinking       | Collapsed by default with no transcript row, like CC; `alt+t` expands. Its traces are the spinner byline and the collapsed tool-group summary.                                                                                                                                           |
+| Prompt editor  | CC's `❯` pointer in the editor gutter, recolored with bash mode.                                                                                                                                                                                                                         |
+| Tool rendering | CC-style call rows, grouped consecutive read-only calls with `⎿` continuations, `ctrl+o` previews, and syntax-highlighted diffs (shiki).                                                                                                                                                 |
 
 ### Commands and shortcuts
 
-| Input | Description |
-|---|---|
-| `/cc-theme` | Pick one of the two CC themes; the choice persists across projects. |
-| `/cc-tools` | Show tool-rendering status. Subcommands: `group on\|off\|toggle`, `detail on\|off\|toggle`. |
-| `/cc-context` | Show the context meter. Subcommands: `bar\|text\|off\|toggle`, `width 4-40`. |
-| `/cc-spinner` | Print the spinner configuration. |
-| `alt+t` | Toggle CC-style thinking visibility. |
+| Input         | Description                                                                                 |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| `/cc-theme`   | Pick one of the two CC themes; the choice persists across projects.                         |
+| `/cc-tools`   | Show tool-rendering status. Subcommands: `group on\|off\|toggle`, `detail on\|off\|toggle`. |
+| `/cc-context` | Show the context meter. Subcommands: `bar\|text\|off\|toggle`, `width 4-40`.                |
+| `/cc-spinner` | Print the spinner configuration.                                                            |
+| `alt+t`       | Toggle CC-style thinking visibility.                                                        |
 
 `detail` is this package's equivalent of CC verbose: previews run to pi's full tool-output cap instead of a few rows, and the status line shows a `detail` segment. It has no keyboard shortcut, matching CC, so it cannot be toggled by accident.
 
@@ -80,13 +80,13 @@ Both ship as truecolor hex values; pi downconverts them on 256-color terminals. 
 
 The package persists its toggles in `~/.pi/settings.json`:
 
-| Key | Default | Description |
-|---|---|---|
-| `groupToolCalls` | `true` | Group consecutive read-only tool calls. |
-| `ccToolsExtraDetail` | `false` | Extra detail (CC verbose). |
-| `ccTheme` | — | Last `/cc-theme` pick, restored if pi falls back to a built-in theme at startup. |
-| `ccContextBar` | `"bar"` | Context meter mode: `bar`, `text`, `off`. |
-| `ccContextBarWidth` | `10` | Meter width in cells, `4`–`40`. |
+| Key                  | Default | Description                                                                      |
+| -------------------- | ------- | -------------------------------------------------------------------------------- |
+| `groupToolCalls`     | `true`  | Group consecutive read-only tool calls.                                          |
+| `ccToolsExtraDetail` | `false` | Extra detail (CC verbose).                                                       |
+| `ccTheme`            | —       | Last `/cc-theme` pick, restored if pi falls back to a built-in theme at startup. |
+| `ccContextBar`       | `"bar"` | Context meter mode: `bar`, `text`, `off`.                                        |
+| `ccContextBarWidth`  | `10`    | Meter width in cells, `4`–`40`.                                                  |
 
 pi's own settings — `theme`, `quietStartup`, `hideThinkingBlock` — live in `~/.pi/agent/settings.json`. The `/cc-theme` picker writes both so the theme survives startup and the extension can restore it if package resolution runs late.
 
@@ -119,12 +119,12 @@ bun run format       # formatting only
 
 Layout:
 
-| Path | Contents |
-|---|---|
-| `extensions/index.ts` | Entry point; imports the chrome and tool modules. |
-| `extensions/*.ts` | Banner, spinner, status line, turn footer, thinking, palette, prompt pointer. |
-| `extensions/tools/` | Tool renderers, grouping, collapse classification, diff renderer. |
-| `themes/*.json` | The two CC themes. |
+| Path                  | Contents                                                                      |
+| --------------------- | ----------------------------------------------------------------------------- |
+| `extensions/index.ts` | Entry point; imports the chrome and tool modules.                             |
+| `extensions/*.ts`     | Banner, spinner, status line, turn footer, thinking, palette, prompt pointer. |
+| `extensions/tools/`   | Tool renderers, grouping, collapse classification, diff renderer.             |
+| `themes/*.json`       | The two CC themes.                                                            |
 
 The `pi` manifest in `package.json` pins the entry (`extensions/index.ts`) and themes, so helper modules beside the entry are imported but never discovered as separate extensions.
 
