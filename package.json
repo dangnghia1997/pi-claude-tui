@@ -1,6 +1,6 @@
 {
 	"name": "pi-claude-tui",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Claude Code visual identity for pi: 2 Claude Code themes, welcome banner, status line with context meter, CC spinner, turn footer, and CC-style tool rendering",
 	"keywords": [
 		"pi-package",
