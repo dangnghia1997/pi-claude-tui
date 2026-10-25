@@ -28,7 +28,7 @@
 		"@earendil-works/pi-tui": "*"
 	},
 	"pi": {
-		"image": "https://raw.githubusercontent.com/dangnghia1997/pi-claude-tui/refs/heads/main/docs/logo.png",
+		"image": "https://unpkg.com/pi-claude-tui/docs/logo.png",
 		"extensions": [
 			"./extensions/index.ts"
 		],
@@ -39,6 +39,7 @@
 	"files": [
 		"extensions",
 		"themes",
+		"docs/logo.png",
 		"README.md",
 		"LICENSE"
 	],
