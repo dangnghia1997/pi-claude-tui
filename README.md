@@ -137,38 +137,18 @@ The `pi` manifest in `package.json` pins the entry (`extensions/index.ts`) and t
 
 ## Releasing
 
-Publishing is tag-driven: `.github/workflows/release.yml` runs on every `v*` tag push, verifies the tag matches `package.json`, then publishes to npm and creates the GitHub Release. That keeps the npm version, the git tag, and the repo's Releases page in sync without any manual step.
+Publishing happens on your machine, not in CI: npm requires a 2FA one-time password to publish and rejects tokens for unattended publishing (HTTP 401 / `EOTP`), so no CI job can publish this package. The release workflow holds no npm credentials.
 
 ```bash
-npm version patch          # bumps package.json, commits, creates tag v0.1.1
+npm version patch          # bumps package.json, commits, creates tag v0.1.2
+npm publish                # runs prepublishOnly: typecheck + lint
 git push --follow-tags     # triggers the Release workflow
 ```
 
-Auth: the workflow prefers npm [trusted publishing](https://docs.npmjs.com/trusted-publishers) (OIDC, no secret). On the package page on npmjs.com open **Settings → Trusted publishing** and add a GitHub Actions publisher with exactly these values:
-
-| Field             | Value           |
-| ----------------- | --------------- |
-| Organization/user | `dangnghia1997` |
-| Repository        | `pi-claude-tui` |
-| Workflow filename | `release.yml`   |
-| Environment       | _(leave blank)_ |
-
-Any mismatch (wrong repo, `release.yaml` vs `release.yml`, or a configured environment that the job does not use) makes npm's OIDC exchange fail silently and `npm publish` exits with `ENEEDAUTH`. The publish step runs with `--loglevel verbose`, so the CI log then shows the real cause as a `npm verb oidc ...` line. Trusted publishing only works for packages that already exist on npm, which is why v0.1.0 was published first.
-
-If you would rather use a token, add a granular npm access token with publish rights as the repository secret `NPM_TOKEN`; the workflow tries OIDC first and falls back to the token only when that failure was not an OTP challenge. Be aware that token publishing is **not** a working escape hatch any more: npm (12.2.1 at the time of writing) accepts such a token for authentication and then rejects the publish itself with
-
-```
-HttpErrorAuthOTP: OTP required for authentication   (401, EOTP)
-```
-
-so a repo with only an `NPM_TOKEN` secret cannot publish unattended. npm is retiring 2FA-bypassing tokens for direct publishing; trusted publishing with OIDC is the only durable option. The workflow turns that specific failure into an annotation saying so.
+`.github/workflows/release.yml` then mirrors the tag into a GitHub Release: it verifies the tag matches `package.json`, runs typecheck and lint, reports whether that version is live on npm, and creates the Release with generated notes. It is idempotent, so any existing tag can be re-released:
 
 ```bash
-# create the token at https://www.npmjs.com/settings/dangnghia1997/tokens
-# (Granular Access Token -> package pi-claude-tui -> Read and write)
-gh secret set NPM_TOKEN --repo dangnghia1997/pi-claude-tui   # paste token at the prompt
-gh secret list --repo dangnghia1997/pi-claude-tui            # verify, shows names only
-gh workflow run release.yml -f tag=v0.1.2                    # re-run the release
+gh workflow run release.yml -f tag=v0.1.2
 ```
 
 Note: a package on the public npm registry never shows up in GitHub's repo sidebar "Packages" box — that box only lists GitHub Packages (`npm.pkg.github.com`, `ghcr.io`). The Releases section is the place to look.

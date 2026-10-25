@@ -1,9 +1,13 @@
 name: Release
 
-# Publishing is driven by tags so npm and GitHub can never disagree about what
-# is current: push a tag -> verify -> publish to npm -> create the GitHub Release.
-# Safe to re-run: if the version is already on npm the publish step is skipped,
-# which lets you backfill the GitHub Release for an older tag via workflow_dispatch.
+# CI does not publish to npm. npm requires a 2FA one-time password to publish
+# and rejects tokens for unattended publishing (HTTP 401 / EOTP), so publishing
+# is a local step:
+#
+#   npm version patch && npm publish && git push --follow-tags
+#
+# This workflow mirrors the pushed tag into a GitHub Release and reports whether
+# the tagged version is actually live on npm. It holds no npm credentials.
 on:
   push:
     tags:
@@ -11,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing tag to (re)publish, e.g. v0.1.0
+        description: Existing tag to (re)release, e.g. v0.1.2
         required: true
 
 concurrency:
@@ -19,17 +23,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     permissions:
-      # contents: write -> create the GitHub Release
-      # id-token: write -> npm provenance / OIDC trusted publishing
-      contents: write
-      id-token: write
-    env:
-      # Job-level so steps can test it with `if: env.NPM_TOKEN != ''`
-      # (the secrets context is not allowed in `if:` expressions).
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      contents: write # create the GitHub Release
     steps:
       - name: Resolve tag
         id: ref
@@ -50,16 +47,10 @@ jobs:
         with:
           bun-version-file: package.json
 
-      # No registry-url on purpose: setup-node would write an .npmrc with an
-      # empty _authToken placeholder, which shadows OIDC trusted publishing.
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version: 22
-
-      # npm >= 11.5 is required for OIDC trusted publishing.
-      - name: Use latest npm
-        run: npm install -g npm@latest
 
       - name: Install
         run: bun install --frozen-lockfile
@@ -80,73 +71,18 @@ jobs:
       - name: Lint
         run: bun run lint
 
-      - name: Check publish credentials
-        run: |
-          echo "npm $(npm -v) on node $(node -v)"
-          if [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
-            echo "::notice::OIDC id-token available: npm trusted publishing can be used"
-          else
-            echo "::warning::No id-token request URL. Verify the job has 'id-token: write'."
-          fi
-          if [ -n "$NPM_TOKEN" ]; then
-            echo "::notice::NPM_TOKEN secret is set and will be used only if OIDC publish fails"
-          else
-            echo "::notice::NPM_TOKEN secret is empty, publish relies on npm trusted publishing"
-          fi
-
-      - name: Publish to npm
+      # Advisory only: the tag may be pushed before the local `npm publish`.
+      - name: Report npm state
         env:
           VERSION: ${{ steps.ref.outputs.version }}
-          # Auth order: OIDC trusted publishing first (no credential stored in
-          # the repo), then the NPM_TOKEN secret as a fallback. Trusted publisher
-          # settings on npmjs.com must match exactly:
-          #   organization/user: dangnghia1997
-          #   repository:        pi-claude-tui
-          #   workflow filename: release.yml
-          #   environment:       (leave blank)
         run: |
           set -euo pipefail
           name="$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).name")"
           if npm view "$name@$VERSION" version >/dev/null 2>&1; then
-            echo "::notice::$name@$VERSION is already on npm, skipping publish"
-            exit 0
+            echo "::notice::$name@$VERSION is live on npm"
+          else
+            echo "::warning title=not on npm yet::$name@$VERSION is not on npm. Publish it locally with 'npm publish' (needs a 2FA code) to match this tag and Release."
           fi
-
-          log=/tmp/npm-publish.log
-
-          # Surface the real reason as an annotation, so it is visible in the UI
-          # and via the check-run API without downloading the raw log.
-          fail() {
-            msg="$(grep -E '^npm (error|verbose|notice)' "$log" | tail -n 25 | tr '\n' ' ' | sed 's/%/%25/g; s/\r//g')"
-            echo "::error title=npm publish failed::${msg:0:3000}"
-            # npm no longer lets 2FA-bypassing tokens publish unattended; a token
-            # that authenticates but cannot publish always lands here.
-            if grep -qE 'EOTP|OTP required for authentication' "$log"; then
-              echo "::error title=NPM_TOKEN cannot publish::npm accepted the token for authentication but requires a one-time password to publish. Remove the NPM_TOKEN secret and configure npm trusted publishing (OIDC) for this repository and release.yml, then re-run this workflow."
-            fi
-            exit 1
-          }
-
-          # --loglevel verbose is required to surface OIDC failures: npm logs the
-          # trusted-publishing token exchange only at verbose level. Without it a
-          # misconfigured trusted publisher looks like a bare ENEEDAUTH.
-          publish() { npm publish --access public --provenance --loglevel verbose 2>&1 | tee "$log"; }
-
-          if publish; then exit 0; fi
-
-          # A token cannot rescue a 2FA challenge, so do not bother retrying.
-          if [ -z "$NPM_TOKEN" ] || grep -qE 'EOTP|OTP required for authentication' "$log"; then
-            fail
-          fi
-
-          echo "::notice::OIDC publish failed, retrying with the NPM_TOKEN secret"
-          npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN" --location=user
-          if ! npm whoami >/tmp/whoami 2>&1; then
-            echo "::error title=npm token rejected::$(head -c 800 /tmp/whoami | tr '\n' ' ' | sed 's/%/%25/g')"
-            exit 1
-          fi
-          echo "::notice::token authenticates as npm user $(cat /tmp/whoami)"
-          publish || fail
 
       - name: Create GitHub Release
         env:
