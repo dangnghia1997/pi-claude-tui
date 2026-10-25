@@ -26,6 +26,10 @@ jobs:
       # id-token: write -> npm provenance / OIDC trusted publishing
       contents: write
       id-token: write
+    env:
+      # Job-level so steps can test it with `if: env.NPM_TOKEN != ''`
+      # (the secrets context is not allowed in `if:` expressions).
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - name: Resolve tag
         id: ref
@@ -46,11 +50,12 @@ jobs:
         with:
           bun-version-file: package.json
 
+      # No registry-url on purpose: setup-node would write an .npmrc with an
+      # empty _authToken placeholder, which shadows OIDC trusted publishing.
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
 
       # npm >= 11.5 is required for OIDC trusted publishing.
       - name: Use latest npm
@@ -75,20 +80,47 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      - name: Check publish credentials
+        run: |
+          echo "npm $(npm -v) on node $(node -v)"
+          if [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "::notice::OIDC id-token available: npm trusted publishing can be used"
+          else
+            echo "::warning::No id-token request URL. Verify the job has 'id-token: write'."
+          fi
+          if [ -n "$NPM_TOKEN" ]; then
+            echo "::notice::NPM_TOKEN secret is set, token auth will be used"
+          else
+            echo "::notice::NPM_TOKEN secret is empty, publish relies on npm trusted publishing"
+          fi
+
+      # Only write an .npmrc when a token exists, so the OIDC path stays clean.
+      - name: Configure npm token
+        if: env.NPM_TOKEN != ''
+        run: npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN" --location=user
+
       - name: Publish to npm
         env:
           VERSION: ${{ steps.ref.outputs.version }}
           # Preferred: configure a GitHub Actions trusted publisher for this
           # workflow on npmjs.com and leave the NPM_TOKEN secret unset (OIDC).
-          # Fallback: an npm automation/granular token in the NPM_TOKEN secret.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Trusted publisher settings must match exactly:
+          #   organization/user: dangnghia1997
+          #   repository:        pi-claude-tui
+          #   workflow filename: release.yml
+          #   environment:       (leave blank)
+          # Fallback: a granular npm token with publish rights in NPM_TOKEN
+          # (written into .npmrc by the step above, if the secret is set).
         run: |
           name="$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).name")"
           if npm view "$name@$VERSION" version >/dev/null 2>&1; then
             echo "::notice::$name@$VERSION is already on npm, skipping publish"
             exit 0
           fi
-          npm publish --access public --provenance
+          # --loglevel verbose is required to surface OIDC failures: npm logs the
+          # trusted-publishing token exchange only at verbose level. Without it a
+          # misconfigured trusted publisher looks like a bare ENEEDAUTH.
+          npm publish --access public --provenance --loglevel verbose
 
       - name: Create GitHub Release
         env:
