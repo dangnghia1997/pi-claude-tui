@@ -11,6 +11,14 @@
 	],
 	"license": "MIT",
 	"author": "Alex Dang",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dangnghia1997/pi-claude-tui.git"
+	},
+	"homepage": "https://github.com/dangnghia1997/pi-claude-tui#readme",
+	"bugs": {
+		"url": "https://github.com/dangnghia1997/pi-claude-tui/issues"
+	},
 	"dependencies": {
 		"@shikijs/cli": "^4.0.2",
 		"diff": "^9.0.0"
@@ -20,7 +28,7 @@
 		"@earendil-works/pi-tui": "*"
 	},
 	"pi": {
-    "image": "https://raw.githubusercontent.com/dangnghia1997/pi-claude-tui/refs/heads/main/docs/logo.png",
+		"image": "https://raw.githubusercontent.com/dangnghia1997/pi-claude-tui/refs/heads/main/docs/logo.png",
 		"extensions": [
 			"./extensions/index.ts"
 		],

@@ -5,6 +5,10 @@ Claude Code's visual identity for [pi](https://pi.dev): two CC themes and CC-sty
 [![npm](https://img.shields.io/npm/v/pi-claude-tui?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/pi-claude-tui)
 [![license](https://img.shields.io/npm/l/pi-claude-tui?style=flat-square)](LICENSE)
 
+<p align="center">
+  <img alt="pi-claude-tui" src="https://raw.githubusercontent.com/dangnghia1997/pi-claude-tui/refs/heads/main/docs/logo.png" width="720">
+</p>
+
 ## Install
 
 ```bash
