@@ -136,6 +136,11 @@ jobs:
           if ! npm publish --access public --provenance --loglevel verbose 2>&1 | tee "$log"; then
             msg="$(grep -E '^npm (error|verbose|notice)' "$log" | tail -n 25 | tr '\n' ' ' | sed 's/%/%25/g; s/\r//g')"
             echo "::error title=npm publish failed::${msg:0:3000}"
+            # npm no longer lets 2FA-bypassing tokens publish unattended; a token
+            # that authenticates but cannot publish always lands here.
+            if grep -qE 'EOTP|OTP required for authentication' "$log"; then
+              echo "::error title=NPM_TOKEN cannot publish::npm accepted the token for authentication but requires a one-time password to publish. Remove the NPM_TOKEN secret and configure npm trusted publishing (OIDC) for this repository and release.yml, then re-run this workflow."
+            fi
             exit 1
           fi
 
