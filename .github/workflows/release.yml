@@ -89,28 +89,21 @@ jobs:
             echo "::warning::No id-token request URL. Verify the job has 'id-token: write'."
           fi
           if [ -n "$NPM_TOKEN" ]; then
-            echo "::notice::NPM_TOKEN secret is set, token auth will be used"
+            echo "::notice::NPM_TOKEN secret is set and will be used only if OIDC publish fails"
           else
             echo "::notice::NPM_TOKEN secret is empty, publish relies on npm trusted publishing"
           fi
 
-      # Only write an .npmrc when a token exists, so the OIDC path stays clean.
-      - name: Configure npm token
-        if: env.NPM_TOKEN != ''
-        run: npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN" --location=user
-
       - name: Publish to npm
         env:
           VERSION: ${{ steps.ref.outputs.version }}
-          # Preferred: configure a GitHub Actions trusted publisher for this
-          # workflow on npmjs.com and leave the NPM_TOKEN secret unset (OIDC).
-          # Trusted publisher settings must match exactly:
+          # Auth order: OIDC trusted publishing first (no credential stored in
+          # the repo), then the NPM_TOKEN secret as a fallback. Trusted publisher
+          # settings on npmjs.com must match exactly:
           #   organization/user: dangnghia1997
           #   repository:        pi-claude-tui
           #   workflow filename: release.yml
           #   environment:       (leave blank)
-          # Fallback: a granular npm token with publish rights in NPM_TOKEN
-          # (written into .npmrc by the step above, if the secret is set).
         run: |
           set -euo pipefail
           name="$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).name")"
@@ -119,21 +112,11 @@ jobs:
             exit 0
           fi
 
-          # Prove the credential works before publishing, and surface the reason
-          # as an annotation so it is visible without downloading the raw log.
-          if [ -n "$NPM_TOKEN" ]; then
-            if ! npm whoami >/tmp/whoami 2>&1; then
-              echo "::error title=npm token rejected::$(head -c 800 /tmp/whoami | tr '\n' ' ' | sed 's/%/%25/g')"
-              exit 1
-            fi
-            echo "::notice::token authenticates as npm user $(cat /tmp/whoami)"
-          fi
-
           log=/tmp/npm-publish.log
-          # --loglevel verbose is required to surface OIDC failures: npm logs the
-          # trusted-publishing token exchange only at verbose level. Without it a
-          # misconfigured trusted publisher looks like a bare ENEEDAUTH.
-          if ! npm publish --access public --provenance --loglevel verbose 2>&1 | tee "$log"; then
+
+          # Surface the real reason as an annotation, so it is visible in the UI
+          # and via the check-run API without downloading the raw log.
+          fail() {
             msg="$(grep -E '^npm (error|verbose|notice)' "$log" | tail -n 25 | tr '\n' ' ' | sed 's/%/%25/g; s/\r//g')"
             echo "::error title=npm publish failed::${msg:0:3000}"
             # npm no longer lets 2FA-bypassing tokens publish unattended; a token
@@ -142,7 +125,28 @@ jobs:
               echo "::error title=NPM_TOKEN cannot publish::npm accepted the token for authentication but requires a one-time password to publish. Remove the NPM_TOKEN secret and configure npm trusted publishing (OIDC) for this repository and release.yml, then re-run this workflow."
             fi
             exit 1
+          }
+
+          # --loglevel verbose is required to surface OIDC failures: npm logs the
+          # trusted-publishing token exchange only at verbose level. Without it a
+          # misconfigured trusted publisher looks like a bare ENEEDAUTH.
+          publish() { npm publish --access public --provenance --loglevel verbose 2>&1 | tee "$log"; }
+
+          if publish; then exit 0; fi
+
+          # A token cannot rescue a 2FA challenge, so do not bother retrying.
+          if [ -z "$NPM_TOKEN" ] || grep -qE 'EOTP|OTP required for authentication' "$log"; then
+            fail
           fi
+
+          echo "::notice::OIDC publish failed, retrying with the NPM_TOKEN secret"
+          npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN" --location=user
+          if ! npm whoami >/tmp/whoami 2>&1; then
+            echo "::error title=npm token rejected::$(head -c 800 /tmp/whoami | tr '\n' ' ' | sed 's/%/%25/g')"
+            exit 1
+          fi
+          echo "::notice::token authenticates as npm user $(cat /tmp/whoami)"
+          publish || fail
 
       - name: Create GitHub Release
         env:

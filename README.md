@@ -155,14 +155,20 @@ Auth: the workflow prefers npm [trusted publishing](https://docs.npmjs.com/trust
 
 Any mismatch (wrong repo, `release.yaml` vs `release.yml`, or a configured environment that the job does not use) makes npm's OIDC exchange fail silently and `npm publish` exits with `ENEEDAUTH`. The publish step runs with `--loglevel verbose`, so the CI log then shows the real cause as a `npm verb oidc ...` line. Trusted publishing only works for packages that already exist on npm, which is why v0.1.0 was published first.
 
-If you would rather use a token, add a granular npm access token with publish rights as the repository secret `NPM_TOKEN`; the workflow uses it as a fallback. Classic "automation" tokens and the bypass-2FA setting are being retired by npm for direct publishing, so trusted publishing is the durable option.
+If you would rather use a token, add a granular npm access token with publish rights as the repository secret `NPM_TOKEN`; the workflow tries OIDC first and falls back to the token only when that failure was not an OTP challenge. Be aware that token publishing is **not** a working escape hatch any more: npm (12.2.1 at the time of writing) accepts such a token for authentication and then rejects the publish itself with
+
+```
+HttpErrorAuthOTP: OTP required for authentication   (401, EOTP)
+```
+
+so a repo with only an `NPM_TOKEN` secret cannot publish unattended. npm is retiring 2FA-bypassing tokens for direct publishing; trusted publishing with OIDC is the only durable option. The workflow turns that specific failure into an annotation saying so.
 
 ```bash
 # create the token at https://www.npmjs.com/settings/dangnghia1997/tokens
 # (Granular Access Token -> package pi-claude-tui -> Read and write)
 gh secret set NPM_TOKEN --repo dangnghia1997/pi-claude-tui   # paste token at the prompt
 gh secret list --repo dangnghia1997/pi-claude-tui            # verify, shows names only
-gh workflow run release.yml -f tag=v0.1.1                    # re-run the release
+gh workflow run release.yml -f tag=v0.1.2                    # re-run the release
 ```
 
 Note: a package on the public npm registry never shows up in GitHub's repo sidebar "Packages" box — that box only lists GitHub Packages (`npm.pkg.github.com`, `ghcr.io`). The Releases section is the place to look.
